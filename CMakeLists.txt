@@ -10,11 +10,21 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt_standard_project_setup()
 
 # Sources
-set(SOURCES src/main.cpp)
+set(SOURCES 
+  src/main.cpp
+  src/QShellUI.cpp
+)
 
+# Headers
+set(HEADERS 
+  includes/QShellUI.h
+)
 
 # Add executable
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+# Add includes dir
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/includes)
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
