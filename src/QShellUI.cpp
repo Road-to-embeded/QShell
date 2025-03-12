@@ -10,15 +10,27 @@ QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
   editor->setReadOnly(false);
   setCentralWidget(editor);
 
+  // create prompt
+  QString prompt = createPrompt(username, hostname, cwd);
+
   // Show prompt
-  displayShellPrompt();
+  displayShellPrompt(prompt);
 }
 
 // Destructor
 QShellUI::~QShellUI(){};
 
+// Create prompt 
+QString QShellUI::createPrompt(QString username, QString hostname, QString cwd) {
+  // placeholders
+  QString shellPrompt = QString("%1@%2:%3$ ").arg(username).arg(hostname).arg(cwd);
+
+  return shellPrompt;
+}
+
+
 // Display prompt method
-void QShellUI::displayShellPrompt() {
+void QShellUI::displayShellPrompt(QString terminalPrompt) {
   // Add shell prompt
-  editor->appendPlainText("xande@Zero-Quantity:~$ ");
+  editor->appendPlainText(terminalPrompt);
 }
