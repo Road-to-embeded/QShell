@@ -14,6 +14,8 @@ public:
 
   void setUsername(); // method to set username from OS
   void setHostname(); // method sets hostname from OS
+  void setHomeDIR(); // method sets home directory
+  void setCWD(); // method to set current working directory
   QString createPrompt(QString username, QString hostname, QString cwd); // method to create shell prompt
   void displayShellPrompt(QString prompt); // method to show prompt
 
@@ -21,7 +23,8 @@ private:
   QPlainTextEdit *editor; // terminal text area 
   QString username;
   QString hostname;
-  QString cwd = "~";
+  QString homeDIR;
+  QString cwd;
   QString prompt;
 
 };

@@ -1,6 +1,7 @@
 #include "QShellUI.h"
-#include <QProcessEnvironment>
+#include <QDir>
 #include <QHostInfo>
+#include <QProcessEnvironment>
 
 QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
   // WINDOW setup
@@ -14,6 +15,8 @@ QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
 
   setUsername(); // set username from OS
   setHostname(); // set hostname from OS
+  setHomeDIR();  // set home directory from OS
+  setCWD();      // set current working directory
 
   // create prompt
   QString prompt = createPrompt(username, hostname, cwd);
@@ -36,8 +39,25 @@ void QShellUI::setUsername() {
 
 // Set hostname from OS
 void QShellUI::setHostname() {
-  // OS hostname  
+  // OS hostname
   hostname = QHostInfo::localHostName();
+}
+
+// Set home directory
+void QShellUI::setHomeDIR() {
+  // OS home directory
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+
+  // home directory
+  homeDIR = env.value("HOME");
+}
+
+// Set current working directory
+void QShellUI::setCWD() {
+  QDir::setCurrent(homeDIR);
+
+  // display cwd as ~
+  cwd = "~";
 }
 
 // Create prompt
