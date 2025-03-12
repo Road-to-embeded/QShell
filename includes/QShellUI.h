@@ -12,13 +12,15 @@ public:
   explicit QShellUI(QWidget *parent = nullptr);
   ~QShellUI();
 
+  void setUsername(); // method to set username from OS
+  void setHostname(); // method sets hostname from OS
   QString createPrompt(QString username, QString hostname, QString cwd); // method to create shell prompt
   void displayShellPrompt(QString prompt); // method to show prompt
 
 private:
   QPlainTextEdit *editor; // terminal text area 
-  QString username = "xande";
-  QString hostname = "Zero-Quantity";
+  QString username;
+  QString hostname;
   QString cwd = "~";
   QString prompt;
 
