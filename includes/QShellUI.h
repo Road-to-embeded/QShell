@@ -1,32 +1,44 @@
-#ifndef QSHELL_UI_H
-#define QSHELL_UI_H
+#ifndef QSHELLUI_H
+#define QSHELLUI_H
 
 #include <QMainWindow>
-#include <QPlainTextEdit>
-#include <QString>
+#include <QTextBrowser>
+#include <QLineEdit>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 
 class QShellUI : public QMainWindow {
-  Q_OBJECT // required
+    Q_OBJECT
 
-public: 
-  explicit QShellUI(QWidget *parent = nullptr);
-  ~QShellUI();
-
-  void setUsername(); // method to set username from OS
-  void setHostname(); // method sets hostname from OS
-  void setHomeDIR(); // method sets home directory
-  void setCWD(); // method to set current working directory
-  QString createPrompt(QString username, QString hostname, QString cwd); // method to create shell prompt
-  void displayShellPrompt(QString prompt); // method to show prompt
+public:
+    explicit QShellUI(QWidget *parent = nullptr);
+    ~QShellUI();
 
 private:
-  QPlainTextEdit *editor; // terminal text area 
-  QString username;
-  QString hostname;
-  QString homeDIR;
-  QString cwd;
-  QString prompt;
+    void setupUI();                   // Sets up the UI
+    void setUsername();               // Fetches username
+    void setHostname();               // Fetches hostname
+    void setHomeDIR();                // Fetches home directory
+    void setCWD();                    // Sets current working directory
+    QString createPrompt();           // Generates the shell prompt
+    void displayShellPrompt();        // Displays the prompt in terminal
+    void handleUserInput();           // Handles input when Enter is pressed
+    void resizeTerminalOutput();      // Dynamically resizes terminal output
+    void movePromptToBottom();        // Moves prompt to the bottom
 
+    QTextBrowser *terminalOutput;     // Read-only terminal display
+    QLineEdit *inputField;            // User input field
+    QLabel *promptLabel;              // Label for prompt
+    QWidget *inputContainer;          // Container for prompt + input field
+    QHBoxLayout *inputLayout;         // Layout for input section
+    QVBoxLayout *mainLayout;          // Main layout
+
+    QString username;
+    QString hostname;
+    QString homeDIR;
+    QString cwd;
+    QString prompt;
 };
 
-#endif // QSHELL_UI_H
+#endif // QSHELLUI_H
