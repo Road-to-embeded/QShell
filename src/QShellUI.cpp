@@ -1,133 +1,218 @@
 #include "QShellUI.h"
+#include <QDebug>
 #include <QDir>
 #include <QHostInfo>
-#include <QProcessEnvironment>
 #include <QKeyEvent>
+#include <QProcessEnvironment>
+#include <QTextDocumentFragment>
 
-QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
-    setupUI();
-}
+/**
+ * @brief Constructor: Initializes the QShell UI.
+ */
+QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) { setupUI(); }
 
-// Destructor
+/**
+ * @brief Destructor: Cleans up resources.
+ */
 QShellUI::~QShellUI() {}
 
-// UI setup
+/**
+ * @brief Sets up the terminal UI using a single QTextEdit.
+ */
 void QShellUI::setupUI() {
-    // Main window properties
-    setWindowTitle("QShell");
-    resize(800, 600);
+  setWindowTitle("QShell");
+  resize(800, 600);
 
-    // Central widget
-    QWidget *centralWidget = new QWidget(this);
-    centralWidget->setStyleSheet("background-color: pink;");
-    mainLayout = new QVBoxLayout(centralWidget);
+  // Create central widget
+  QWidget *centralWidget = new QWidget(this);
+  mainLayout = new QVBoxLayout(centralWidget);
 
-    // Terminal output area (Read-only)
-    terminalOutput = new QTextBrowser(this);
-    terminalOutput->setStyleSheet("background-color: red; color: green; font-family: monospace;");
-    terminalOutput->setReadOnly(true);
+  // Create a QTextEdit for displaying prompts, input, and output
+  terminalArea = new QTextEdit(this);
+  terminalArea->setReadOnly(false); // Allow typing
+  terminalArea->setStyleSheet(
+      "background-color: black; color: green; font-family: monospace;");
 
-    // Input container (Holds prompt + input field)
-    inputContainer = new QWidget(this);
-    inputLayout = new QHBoxLayout(inputContainer);
+  mainLayout->addWidget(terminalArea);
+  setCentralWidget(centralWidget);
 
-    // Prompt label
-    promptLabel = new QLabel(this);
-    promptLabel->setStyleSheet("background-color: blue; color: green; font-family: monospace;");
+  // Retrieve system details for prompt
+  setUsername();
+  setHostname();
+  setHomeDIR();
+  setCWD();
 
-    // Input field
-    inputField = new QLineEdit(this);
-    inputField->setStyleSheet("background-color: gray; color: green; font-family: monospace; border: none;");
-    inputField->setFocusPolicy(Qt::StrongFocus); // Ensure cursor starts here
+  // Making sure QShellUI gets key events, without it QTextEdit handles key presses
+  terminalArea->installEventFilter(this);
 
-    // Add prompt and input field to the layout
-    inputLayout->addWidget(promptLabel);
-    inputLayout->addWidget(inputField);
-    inputLayout->setStretch(1, 1); // Ensures input field takes most of the space
-    inputContainer->setLayout(inputLayout);
-
-    // Add widgets to main layout
-    mainLayout->addWidget(inputContainer);
-    mainLayout->addWidget(terminalOutput);
-    setCentralWidget(centralWidget);
-    promptLabel->setFixedHeight(inputField->sizeHint().height()); 
-
-    // Set system details
-    setUsername();
-    setHostname();
-    setHomeDIR();
-    setCWD();
-
-    // Generate initial prompt
-    prompt = createPrompt();
-    displayShellPrompt();
-
-    // Connect inputField to handleUserInput on Enter press
-    connect(inputField, &QLineEdit::returnPressed, this, &QShellUI::handleUserInput);
+  // Generate and display the initial prompt
+  prompt = createPrompt();
+  displayShellPrompt();
 }
 
-// Set username from OS
+/**
+ * @brief Retrieves the system username.
+ */
 void QShellUI::setUsername() {
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    username = env.value("USER", env.value("USERNAME", "Unknown User"));
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  username = env.value("USER", env.value("USERNAME", "Unknown User"));
 }
 
-// Set hostname from OS
-void QShellUI::setHostname() {
-    hostname = QHostInfo::localHostName();
-}
+/**
+ * @brief Retrieves the system hostname.
+ */
+void QShellUI::setHostname() { hostname = QHostInfo::localHostName(); }
 
-// Set home directory
+/**
+ * @brief Retrieves the user's home directory.
+ */
 void QShellUI::setHomeDIR() {
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    homeDIR = env.value("HOME");
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  homeDIR = env.value("HOME");
 }
 
-// Set current working directory
+/**
+ * @brief Sets the current working directory to the home directory.
+ */
 void QShellUI::setCWD() {
-    QDir::setCurrent(homeDIR);
-    cwd = "~";
+  QDir::setCurrent(homeDIR);
+  cwd = "~"; // Display as ~ instead of full path
 }
 
-// Create prompt
+/**
+ * @brief Creates the shell prompt string in format: `username@hostname:cwd$ `
+ * @return The formatted prompt string.
+ */
 QString QShellUI::createPrompt() {
-    return QString("%1@%2:%3$ ").arg(username, hostname, cwd);
+    QString rawPrompt = QString("<b style='color:yellow;'>%1@%2</b>:<b style='color:blue;'>%3</b>$ ")
+                            .arg(username, hostname, cwd);
+
+    // Convert to plain text before storing
+    return QTextDocumentFragment::fromHtml(rawPrompt).toPlainText();
 }
 
-// Display prompt method
+
+/**
+ * @brief Displays a new prompt at the bottom of the terminal.
+ */
 void QShellUI::displayShellPrompt() {
-    promptLabel->setText(prompt);
-    inputField->clear();
-    inputField->setFocus(); // Ensure cursor stays active
+  terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
+  terminalArea->insertHtml(prompt);           // Insert the new prompt
+  terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
+
+  // Save position where user input starts (to prevent deleting the prompt)
+  promptPosition = terminalArea->textCursor().position();
 }
 
-// Handle user input
-void QShellUI::handleUserInput() {
-    QString userCommand = inputField->text();
-    if (userCommand.isEmpty()) return;
+/**
+ * @brief Captures user input and prevents backspacing beyond the prompt.
+ * @param event The key event triggered by user input.
+ */
+void QShellUI::keyPressEvent(QKeyEvent *event) {
+  QTextCursor cursor = terminalArea->textCursor(); // Get the cursor
 
-    // Append user input to terminal output
-    terminalOutput->append(prompt + userCommand);
+  // Debugging output
+  qDebug() << "KeyPressEvent triggered with key:" << event->key();
+  qDebug() << "Cursor Position:" << cursor.position()
+           << "Prompt Position:" << promptPosition;
 
-    // Simulate command execution (for now, just echoing)
-    terminalOutput->append("Executing: " + userCommand);
+  // Prevent moving cursor before the prompt (Left Arrow)
+  if (event->key() == Qt::Key_Left) {
+    if (cursor.position() <= promptPosition) {
+      return; // Ignore left arrow if it's at or before the prompt
+    }
+  }
 
-    // Adjust terminalOutput size to fit content
-    resizeTerminalOutput();
+  // Prevent moving cursor before the prompt (Up Arrow)
+  if (event->key() == Qt::Key_Up) {
+    return; // Ignore up arrow to keep cursor within the current command line
+  }
 
-    // Move prompt to the bottom
-    movePromptToBottom();
+  // Prevent Backspace from deleting the prompt
+  if (event->key() == Qt::Key_Backspace) {
+    if (cursor.position() <= promptPosition) {
+      return; // Ignore backspace if at prompt position
+    }
+    cursor.deletePreviousChar(); // Allow deleting user input
+    return;
+  }
+
+  // Prevent selecting and deleting the prompt
+  if (cursor.hasSelection()) {
+    if (cursor.selectionStart() < promptPosition ||
+        cursor.selectionEnd() < promptPosition) {
+      return; // Ignore selection if it includes the prompt
+    }
+  }
+
+  // Block "Cut" (Ctrl + X) if it includes the prompt
+  if (event->matches(QKeySequence::Cut)) {
+    return;
+  }
+
+  // Block "Paste" (Ctrl + V) if it would overwrite the prompt
+  if (event->matches(QKeySequence::Paste)) {
+    if (cursor.position() < promptPosition) {
+      return;
+    }
+  }
+
+  // Handle "Enter" key (User submits command)
+  if (event->key() == Qt::Key_Return) {
+    // Ensure no text is selected
+    cursor.clearSelection();
+
+    // Extract the command from QTextEdit using promptPosition
+    QString terminalText = terminalArea->toHtml();       // Get full HTML
+    terminalText = QTextDocumentFragment::fromHtml(terminalText)
+                       .toPlainText(); // Strip formatting
+
+    // Find the last occurrence of the prompt
+    int lastPromptIndex = terminalText.lastIndexOf(prompt);
+    if (lastPromptIndex == -1) {
+      qDebug() << "Error: Prompt not found!";
+      return;
+    }
+
+    // Extract the user command correctly
+    QString userCommand =
+        terminalText.mid(lastPromptIndex + prompt.length()).trimmed();
+
+
+    // Move the cursor to the end before appending output
+    terminalArea->moveCursor(QTextCursor::End);
+
+    // Display the command in the terminal output
+    if (!userCommand.isEmpty()) {
+      terminalArea->append(prompt + userCommand); // Show prompt + command
+    } else {
+      terminalArea->append(""); // Just move to a new line if empty
+    }
+
+    // Move to the next line
+    terminalArea->append("");
+
+    // Generate a new prompt
+    displayShellPrompt();
+    return;
+  }
+
+  // Allow typing by manually inserting text into QTextEdit
+  if (!event->text().isEmpty()) {
+    cursor.insertText(event->text());
+    promptPosition = cursor.position(); // Update prompt position
+    return;
+  }
+
+  // Default behavior for other keys
+  QMainWindow::keyPressEvent(event);
 }
 
-// Dynamically resize terminalOutput based on content height
-void QShellUI::resizeTerminalOutput() {
-    terminalOutput->setFixedHeight(terminalOutput->document()->size().height());
+bool QShellUI::eventFilter(QObject *object, QEvent *event) {
+  if (object == terminalArea && event->type() == QEvent::KeyPress) {
+    QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+    keyPressEvent(keyEvent); // Call keyPressEvent manually
+    return true;             // Mark event as handled
+  }
+  return QMainWindow::eventFilter(object, event);
 }
-
-// Move the prompt + input field to the bottom
-void QShellUI::movePromptToBottom() {
-    mainLayout->removeWidget(inputContainer);
-    mainLayout->addWidget(inputContainer);
-    inputField->setFocus(); // Ensure cursor stays in the input field
-}
-
