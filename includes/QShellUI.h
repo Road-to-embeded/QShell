@@ -4,7 +4,8 @@
 #include <QMainWindow>
 #include <QTextEdit>
 #include <QVBoxLayout>
-
+#include <QString>
+#include "ProcessManager.h"
 /**
  * @brief The QShellUI class creates a simple terminal emulator.
  *
@@ -31,6 +32,20 @@ public:
    * @brief Intercept key events before QTextEdit handles them
    */
   bool eventFilter(QObject *object, QEvent *event) override;
+
+signals:
+  /*
+   * @brief Send command output ready signal to ProcessManager
+   * 
+   */
+  void commandOutputReady(QString command); 
+
+private slots:
+  /*
+   * @brief Receives output from ProcessManager
+   *
+   */
+  void displayOutput(QString output);
 
 protected:
   /**
@@ -84,7 +99,8 @@ private:
   void handleUserInput();
 
   QTextEdit *terminalArea; // Terminal display area (both input & output).
-  QVBoxLayout *mainLayout; // Layout manager for UI elements.
+  QVBoxLayout *mainLayout; // Layout manager for UI elements. 
+  ProcessManager *processManager; // ShellUI create a ProcessManager
 
   QString username;        // Stores the current system username.
   QString hostname;        // Stores the system hostname.

@@ -13,11 +13,13 @@ qt_standard_project_setup()
 set(SOURCES 
   src/main.cpp
   src/QShellUI.cpp
+  src/ProcessManager.cpp
 )
 
 # Headers
 set(HEADERS 
   includes/QShellUI.h
+  includes/ProcessManager.h
 )
 
 # Add executable

@@ -1,3 +1,4 @@
+#include "ProcessManager.h"
 #include "QShellUI.h"
 #include <QDebug>
 #include <QDir>
@@ -5,11 +6,25 @@
 #include <QKeyEvent>
 #include <QProcessEnvironment>
 #include <QTextDocumentFragment>
+#include <QTimer>
 
 /**
  * @brief Constructor: Initializes the QShell UI.
  */
-QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) { setupUI(); }
+QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
+  setupUI(); // Setup shell UI
+
+  // create ProcessManager instance
+  processManager = new ProcessManager(this);
+
+  // Connect QShellUI command signal to ProcessManager startProcess function
+  connect(this, &QShellUI::commandOutputReady, processManager,
+          &ProcessManager::startProcess);
+
+  // Connect ProcessManager output signal to QShellUI display function
+  connect(processManager, &ProcessManager::processOutputReady, this,
+          &QShellUI::displayOutput);
+}
 
 /**
  * @brief Destructor: Cleans up resources.
@@ -42,7 +57,8 @@ void QShellUI::setupUI() {
   setHomeDIR();
   setCWD();
 
-  // Making sure QShellUI gets key events, without it QTextEdit handles key presses
+  // Making sure QShellUI gets key events, without it QTextEdit handles key
+  // presses
   terminalArea->installEventFilter(this);
 
   // Generate and display the initial prompt
@@ -84,13 +100,14 @@ void QShellUI::setCWD() {
  * @return The formatted prompt string.
  */
 QString QShellUI::createPrompt() {
-    QString rawPrompt = QString("<b style='color:yellow;'>%1@%2</b>:<b style='color:blue;'>%3</b>$ ")
-                            .arg(username, hostname, cwd);
+  QString rawPrompt =
+      QString(
+          "<b style='color:yellow;'>%1@%2</b>:<b style='color:blue;'>%3</b>$ ")
+          .arg(username, hostname, cwd);
 
-    // Convert to plain text before storing
-    return QTextDocumentFragment::fromHtml(rawPrompt).toPlainText();
+  // Convert to plain text before storing
+  return QTextDocumentFragment::fromHtml(rawPrompt).toPlainText();
 }
-
 
 /**
  * @brief Displays a new prompt at the bottom of the terminal.
@@ -110,11 +127,6 @@ void QShellUI::displayShellPrompt() {
  */
 void QShellUI::keyPressEvent(QKeyEvent *event) {
   QTextCursor cursor = terminalArea->textCursor(); // Get the cursor
-
-  // Debugging output
-  qDebug() << "KeyPressEvent triggered with key:" << event->key();
-  qDebug() << "Cursor Position:" << cursor.position()
-           << "Prompt Position:" << promptPosition;
 
   // Prevent moving cursor before the prompt (Left Arrow)
   if (event->key() == Qt::Key_Left) {
@@ -163,7 +175,7 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     cursor.clearSelection();
 
     // Extract the command from QTextEdit using promptPosition
-    QString terminalText = terminalArea->toHtml();       // Get full HTML
+    QString terminalText = terminalArea->toHtml(); // Get full HTML
     terminalText = QTextDocumentFragment::fromHtml(terminalText)
                        .toPlainText(); // Strip formatting
 
@@ -178,22 +190,14 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     QString userCommand =
         terminalText.mid(lastPromptIndex + prompt.length()).trimmed();
 
-
     // Move the cursor to the end before appending output
     terminalArea->moveCursor(QTextCursor::End);
 
-    // Display the command in the terminal output
+    // Send command with signal to ProcessManager
     if (!userCommand.isEmpty()) {
-      terminalArea->append(prompt + userCommand); // Show prompt + command
-    } else {
-      terminalArea->append(""); // Just move to a new line if empty
+      emit commandOutputReady(userCommand); // send command to ProcessManager
     }
 
-    // Move to the next line
-    terminalArea->append("");
-
-    // Generate a new prompt
-    displayShellPrompt();
     return;
   }
 
@@ -208,6 +212,19 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
   QMainWindow::keyPressEvent(event);
 }
 
+/**
+ * @brief Filters key press events for the terminal area.
+ *
+ * This method intercepts key press events targeted at the terminal area
+ * (`QTextEdit`). If a key press event occurs in the terminal, it manually calls
+ * `keyPressEvent()` to handle user input. This ensures that the terminal
+ * behaves as expected.
+ *
+ * @param object The QObject that received the event.
+ * @param event The event being processed.
+ * @return `true` if the event was handled, preventing further propagation;
+ *         otherwise, forwards it to the default event handler.
+ */
 bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   if (object == terminalArea && event->type() == QEvent::KeyPress) {
     QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
@@ -215,4 +232,14 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
     return true;             // Mark event as handled
   }
   return QMainWindow::eventFilter(object, event);
+}
+
+void QShellUI::displayOutput(QString output) {
+  terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
+  terminalArea->insertPlainText("\n" +
+                                output.trimmed()); // Append output correctly
+  terminalArea->append(""); // Move to the next line after output
+
+  // Delay new prompt appears ONLY after the last output
+  QTimer::singleShot(10, this, &QShellUI::displayShellPrompt);
 }
