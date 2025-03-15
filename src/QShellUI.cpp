@@ -244,10 +244,14 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
 }
 
 void QShellUI::displayOutput(QString output) {
+  // ignore empty output
+  if (output.trimmed().isEmpty()) {
+    return;
+  }
+
   terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
-  terminalArea->insertPlainText("\n" +
-                                output.trimmed()); // Append output correctly
-  terminalArea->append(""); // Move to the next line after output
+  terminalArea->insertPlainText("\n" + output.trimmed()); // Append output correctly
+
 
   // Delay new prompt appears ONLY after the last output
   QTimer::singleShot(10, this, &QShellUI::displayShellPrompt);
