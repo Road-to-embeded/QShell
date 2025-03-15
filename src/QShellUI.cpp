@@ -114,6 +114,16 @@ QString QShellUI::createPrompt() {
  */
 void QShellUI::displayShellPrompt() {
   terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
+
+  // Get the last line in the terminal
+  QStringList lines = terminalArea->toPlainText().split("\n");
+  QString lastLine = lines.isEmpty() ? "" : lines.last().trimmed();
+
+  // If the last line is already a prompt, do NOT add another one
+  if (lastLine == prompt.trimmed()) {
+    return;
+  }
+
   terminalArea->insertHtml(prompt);           // Insert the new prompt
   terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
 
@@ -182,7 +192,6 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     // Find the last occurrence of the prompt
     int lastPromptIndex = terminalText.lastIndexOf(prompt);
     if (lastPromptIndex == -1) {
-      qDebug() << "Error: Prompt not found!";
       return;
     }
 
