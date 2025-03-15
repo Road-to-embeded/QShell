@@ -136,7 +136,11 @@ void QShellUI::displayShellPrompt() {
  * @param event The key event triggered by user input.
  */
 void QShellUI::keyPressEvent(QKeyEvent *event) {
-  QTextCursor cursor = terminalArea->textCursor(); // Get the cursor
+  // get the cursor
+  QTextCursor cursor = terminalArea->textCursor();
+
+  qDebug() << "Cursor Position:" << cursor.position();
+  qDebug() << "Prompt Position:" << promptPosition;
 
   // Prevent moving cursor before the prompt (Left Arrow)
   if (event->key() == Qt::Key_Left) {
@@ -153,8 +157,11 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
   // Prevent Backspace from deleting the prompt
   if (event->key() == Qt::Key_Backspace) {
     if (cursor.position() <= promptPosition) {
+      qDebug() << "Backspace blocked to prevent deleting the prompt.";
       return; // Ignore backspace if at prompt position
     }
+
+    qDebug() << "Backspace pressed: Deleting character...";
     cursor.deletePreviousChar(); // Allow deleting user input
     return;
   }
@@ -212,8 +219,9 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
 
   // Allow typing by manually inserting text into QTextEdit
   if (!event->text().isEmpty()) {
+    qDebug() << "Typing detected: " << event->text();
     cursor.insertText(event->text());
-    promptPosition = cursor.position(); // Update prompt position
+    // promptPosition = cursor.position(); // Update prompt position
     return;
   }
 
@@ -237,8 +245,16 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
 bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   if (object == terminalArea && event->type() == QEvent::KeyPress) {
     QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+    qDebug() << "[EVENT FILTER] Key pressed: " << keyEvent->key();
     keyPressEvent(keyEvent); // Call keyPressEvent manually
-    return true;             // Mark event as handled
+
+    // If it's Backspace, we mark it as handled to prevent QTextEdit from
+    // interfering
+    if (keyEvent->key() == Qt::Key_Backspace) {
+      return true; // Stop propagation so QTextEdit does not process it
+    }
+
+    return true; // Mark event as handled
   }
   return QMainWindow::eventFilter(object, event);
 }
@@ -250,8 +266,8 @@ void QShellUI::displayOutput(QString output) {
   }
 
   terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
-  terminalArea->insertPlainText("\n" + output.trimmed()); // Append output correctly
-
+  terminalArea->insertPlainText("\n" +
+                                output.trimmed()); // Append output correctly
 
   // Delay new prompt appears ONLY after the last output
   QTimer::singleShot(10, this, &QShellUI::displayShellPrompt);
