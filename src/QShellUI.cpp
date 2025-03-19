@@ -7,6 +7,7 @@
 #include <QProcessEnvironment>
 #include <QTextDocumentFragment>
 #include <QTimer>
+#include <QApplication>
 
 /**
  * @brief Constructor: Initializes the QShell UI.
@@ -124,11 +125,20 @@ void QShellUI::displayShellPrompt() {
     return;
   }
 
+  // prevents from adding a new line to the first time a prompt is displayed
+  if (!isFirstPrompt) {
+    // add new line before prompt
+    terminalArea->insertPlainText("\n");
+  }
+
   terminalArea->insertHtml(prompt);           // Insert the new prompt
   terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
 
   // Save position where user input starts (to prevent deleting the prompt)
   promptPosition = terminalArea->textCursor().position();
+
+  // flag first prompt as done
+  isFirstPrompt = false;
 }
 
 /**
@@ -206,6 +216,13 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     QString userCommand =
         terminalText.mid(lastPromptIndex + prompt.length()).trimmed();
 
+    // handle exit command
+    if (userCommand == "exit") {
+      // close shell
+      QApplication::quit();
+      return;
+    }
+
     // Move the cursor to the end before appending output
     terminalArea->moveCursor(QTextCursor::End);
 
@@ -269,6 +286,12 @@ void QShellUI::displayOutput(QString output) {
   terminalArea->insertPlainText("\n" +
                                 output.trimmed()); // Append output correctly
 
+  if (!output.endsWith("\n")) {
+    // add new line if missing from output
+    terminalArea->append("");
+  }
+  qDebug() << "[DEBUG] Final output before prompt: " << output.right(10);
+
   // Delay new prompt appears ONLY after the last output
-  QTimer::singleShot(10, this, &QShellUI::displayShellPrompt);
+  QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
 }
