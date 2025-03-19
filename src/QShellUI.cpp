@@ -116,6 +116,18 @@ QString QShellUI::createPrompt() {
 void QShellUI::displayShellPrompt() {
   terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
 
+  // refresh current working directory (this handles the cd command prompt update)
+  cwd = QDir::currentPath();
+
+  // replace home DIR with '~'
+  QString homePath = QDir::homePath();
+  if (cwd.startsWith(homePath)) {
+    cwd.replace(0, homePath.length(), "~");
+  }
+
+  // create prompt with updated path
+  prompt = createPrompt();
+
   // Get the last line in the terminal
   QStringList lines = terminalArea->toPlainText().split("\n");
   QString lastLine = lines.isEmpty() ? "" : lines.last().trimmed();
@@ -220,6 +232,34 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     if (userCommand == "exit") {
       // close shell
       QApplication::quit();
+      return;
+    }
+
+    // handle DIR changes
+    if (userCommand.startsWith("cd ")) {
+      // get DIR path after cd command
+      QString newDIR = userCommand.mid(3).trimmed();
+
+      // handle empty path
+      if (newDIR.isEmpty()) {
+        newDIR = QDir::homePath(); // go to home directory
+      }
+
+      // validate path existance
+      if (QDir(newDIR).exists()) {
+        // change working DIR
+        QDir::setCurrent(newDIR);
+        
+        // update shells current working directory
+        cwd = QDir::currentPath();
+      } else {
+        displayOutput("cd: nosuch file or dir: " + newDIR);
+      }
+
+      // display new prompt with new DIR
+      displayShellPrompt();
+
+      // stop further processing of the command (No need to send command to child Process)
       return;
     }
 

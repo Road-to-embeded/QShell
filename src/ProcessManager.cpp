@@ -12,8 +12,17 @@ ProcessManager::~ProcessManager(){
 };
 
 void ProcessManager::startProcess(QString command) {
+  // handle command arguments
+  QStringList args = command.split(" ", Qt::SkipEmptyParts);
+
+  // handle empty command
+  if (args.isEmpty()) {
+    return;
+  }
+
   // Run command inside QProcess
-  process->start(command);
+  QString program = args.takeFirst(); // get command itself
+  process->start(program, args);
 
   // Capture process output and send it to QShellUI
   connect(process, &QProcess::readyReadStandardOutput, this, [this]() {
