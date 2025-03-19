@@ -1,5 +1,6 @@
 #include "ProcessManager.h"
 #include "QShellUI.h"
+#include <QApplication>
 #include <QDebug>
 #include <QDir>
 #include <QHostInfo>
@@ -7,7 +8,6 @@
 #include <QProcessEnvironment>
 #include <QTextDocumentFragment>
 #include <QTimer>
-#include <QApplication>
 
 /**
  * @brief Constructor: Initializes the QShell UI.
@@ -116,7 +116,8 @@ QString QShellUI::createPrompt() {
 void QShellUI::displayShellPrompt() {
   terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
 
-  // refresh current working directory (this handles the cd command prompt update)
+  // refresh current working directory (this handles the cd command prompt
+  // update)
   cwd = QDir::currentPath();
 
   // replace home DIR with '~'
@@ -236,30 +237,46 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     }
 
     // handle DIR changes
-    if (userCommand.startsWith("cd ")) {
-      // get DIR path after cd command
-      QString newDIR = userCommand.mid(3).trimmed();
+    if (userCommand.startsWith("cd")) {
+      // placeholders
+      QString newDIR;
 
-      // handle empty path
-      if (newDIR.isEmpty()) {
-        newDIR = QDir::homePath(); // go to home directory
+      // get command arguments
+      QStringList args = userCommand.split(" ", Qt::SkipEmptyParts);
+
+      if (args.size() == 1) {
+        // go home directory
+        newDIR = QDir::homePath();
+      } else {
+        // grab new path
+        newDIR = args[1];
       }
 
       // validate path existance
       if (QDir(newDIR).exists()) {
         // change working DIR
         QDir::setCurrent(newDIR);
-        
+
         // update shells current working directory
         cwd = QDir::currentPath();
+
+        // replace home directory with "~"
+        QString homePath = QDir::homePath();
+        if (cwd.startsWith(homePath)) {
+          cwd.replace(0, homePath.length(), "~");
+        }
+
+        // generate prompt with new path
+        prompt = createPrompt();
       } else {
-        displayOutput("cd: nosuch file or dir: " + newDIR);
+        displayOutput("cd: no such file or directory: " + newDIR);
       }
 
       // display new prompt with new DIR
       displayShellPrompt();
 
-      // stop further processing of the command (No need to send command to child Process)
+      // stop further processing of the command (No need to send command to
+      // child Process)
       return;
     }
 
