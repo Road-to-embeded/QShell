@@ -22,6 +22,7 @@ QShell is a cross-platform shell like terminal.
 - [] Add output redirections. 
 - [] Handle more advance shell operations and interactive commands such as cat, grep, read. 
 - [] Customize overall shell style.
+- [] Add setttings to change shell styles.
 
 ## Known Bugs
 

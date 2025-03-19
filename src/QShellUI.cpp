@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QHostInfo>
 #include <QKeyEvent>
 #include <QProcessEnvironment>
@@ -13,7 +14,8 @@
  * @brief Constructor: Initializes the QShell UI.
  */
 QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
-  setupUI(); // Setup shell UI
+  setupUI();        // Setup shell UI
+  loadStyleSheet(); // load default styles
 
   // create ProcessManager instance
   processManager = new ProcessManager(this);
@@ -32,6 +34,37 @@ QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
  */
 QShellUI::~QShellUI() {}
 
+/*
+ * @brief Load stylesheet
+ */
+void QShellUI::loadStyleSheet() {
+  // find executable path
+  QString qAppDIR = QCoreApplication::applicationDirPath();
+
+  // adjusting path to stylesheet
+  QString qssPath = QDir(qAppDIR).filePath("../resources/styles.qss");
+
+  // load resources
+  QFile stylesFile(qssPath);
+
+  // open file on readonly mode
+  if (stylesFile.open(QFile::ReadOnly)) {
+    // Convert QByteArray to QString
+    QString styleSheet = QLatin1String(stylesFile.readAll());
+
+    // apply styles globally using qApp(pointer to )
+    qApp->setStyleSheet(styleSheet);
+    qDebug() << "Loaded Stylesheet:\n" << styleSheet;
+    stylesFile.close();
+    qDebug() << "Stylesheet loaded successfully!";
+  } else {
+    qDebug() << "Error loading QSS file.";
+  }
+  qDebug() << "Terminal Current StyleSheet:\n" << terminalArea->styleSheet();
+  qDebug() << "Current App Stylesheet:\n" << qApp->styleSheet();
+
+}
+
 /**
  * @brief Sets up the terminal UI using a single QTextEdit.
  */
@@ -46,8 +79,7 @@ void QShellUI::setupUI() {
   // Create a QTextEdit for displaying prompts, input, and output
   terminalArea = new QTextEdit(this);
   terminalArea->setReadOnly(false); // Allow typing
-  terminalArea->setStyleSheet(
-      "background-color: black; color: green; font-family: monospace;");
+  terminalArea->setProperty("class", "defaultTerminal");
 
   mainLayout->addWidget(terminalArea);
   setCentralWidget(centralWidget);
@@ -101,11 +133,7 @@ void QShellUI::setCWD() {
  * @return The formatted prompt string.
  */
 QString QShellUI::createPrompt() {
-  QString rawPrompt =
-      QString(
-          "<b style='color:yellow;'>%1@%2</b>:<b style='color:blue;'>%3</b>$ ")
-          .arg(username, hostname, cwd);
-
+  QString rawPrompt = QString("%1@%2:%3$").arg(username, hostname, cwd);
   // Convert to plain text before storing
   return QTextDocumentFragment::fromHtml(rawPrompt).toPlainText();
 }
@@ -144,7 +172,18 @@ void QShellUI::displayShellPrompt() {
     terminalArea->insertPlainText("\n");
   }
 
-  terminalArea->insertHtml(prompt);           // Insert the new prompt
+  // apply class property (QTextEdit area styles)
+  terminalArea->setObjectName("defaultTerminal");
+
+  // apply default style
+  QString styledPrompt = QString("<span id='prompt'>"
+                                 "<span id='promptPrefix'>%1@%2</span>:"
+                                 "<span id='promptCWD'>%3</span>$ "
+                                 "</span>")
+                             .arg(username, hostname, cwd);
+  qDebug() << "Final Styled Prompt HTML:\n" << styledPrompt;
+
+  terminalArea->insertHtml(styledPrompt);     // Insert the new prompt
   terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
 
   // Save position where user input starts (to prevent deleting the prompt)
@@ -162,9 +201,6 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
   // get the cursor
   QTextCursor cursor = terminalArea->textCursor();
 
-  qDebug() << "Cursor Position:" << cursor.position();
-  qDebug() << "Prompt Position:" << promptPosition;
-
   // Prevent moving cursor before the prompt (Left Arrow)
   if (event->key() == Qt::Key_Left) {
     if (cursor.position() <= promptPosition) {
@@ -180,11 +216,9 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
   // Prevent Backspace from deleting the prompt
   if (event->key() == Qt::Key_Backspace) {
     if (cursor.position() <= promptPosition) {
-      qDebug() << "Backspace blocked to prevent deleting the prompt.";
       return; // Ignore backspace if at prompt position
     }
 
-    qDebug() << "Backspace pressed: Deleting character...";
     cursor.deletePreviousChar(); // Allow deleting user input
     return;
   }
@@ -293,7 +327,6 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
 
   // Allow typing by manually inserting text into QTextEdit
   if (!event->text().isEmpty()) {
-    qDebug() << "Typing detected: " << event->text();
     cursor.insertText(event->text());
     // promptPosition = cursor.position(); // Update prompt position
     return;
@@ -319,7 +352,6 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
 bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   if (object == terminalArea && event->type() == QEvent::KeyPress) {
     QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-    qDebug() << "[EVENT FILTER] Key pressed: " << keyEvent->key();
     keyPressEvent(keyEvent); // Call keyPressEvent manually
 
     // If it's Backspace, we mark it as handled to prevent QTextEdit from
@@ -347,7 +379,6 @@ void QShellUI::displayOutput(QString output) {
     // add new line if missing from output
     terminalArea->append("");
   }
-  qDebug() << "[DEBUG] Final output before prompt: " << output.right(10);
 
   // Delay new prompt appears ONLY after the last output
   QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);

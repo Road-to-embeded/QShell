@@ -1,0 +1,21 @@
+.defaultTerminal {
+   background-color: black;
+   color: green; 
+   font-family: monospace;
+}
+
+#prompt {
+  font: monospace;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#promptPrefix {
+  font-weight: bold;
+  font: 10px;
+  color: #9BDB0F;
+}
+
+#promptCWD {
+  color: #11E3DF;
+}

@@ -1,11 +1,11 @@
 #ifndef QSHELLUI_H
 #define QSHELLUI_H
 
+#include "ProcessManager.h"
 #include <QMainWindow>
+#include <QString>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <QString>
-#include "ProcessManager.h"
 /**
  * @brief The QShellUI class creates a simple terminal emulator.
  *
@@ -33,12 +33,17 @@ public:
    */
   bool eventFilter(QObject *object, QEvent *event) override;
 
+  /*
+   *@brief Loads stylesheet file into QShellUI
+   */
+  void loadStyleSheet();
+
 signals:
   /*
    * @brief Send command output ready signal to ProcessManager
-   * 
+   *
    */
-  void commandOutputReady(QString command); 
+  void commandOutputReady(QString command);
 
 private slots:
   /*
@@ -82,7 +87,6 @@ private:
    */
   void setCWD();
 
-
   /**
    * @brief Generates the shell prompt in the format: `username@hostname:cwd$`
    * @return The formatted prompt string.
@@ -99,16 +103,18 @@ private:
    */
   void handleUserInput();
 
-  QTextEdit *terminalArea;        // Terminal display area (both input & output).
-  QVBoxLayout *mainLayout;        // Layout manager for UI elements. 
+  QTextEdit *terminalArea; // Terminal display area (both input & output).
+  QVBoxLayout *mainLayout; // Layout manager for UI elements.
   ProcessManager *processManager; // ShellUI create a ProcessManager
   QString username;               // Stores the current system username.
   QString hostname;               // Stores the system hostname.
   QString homeDIR;                // Stores the home directory.
   QString cwd;                    // Stores the current working directory.
   QString prompt;                 // Stores the generated prompt.
-  int promptPosition;             // Tracks where user input starts to prevent prompt deletion.
-  bool isFirstPrompt = true;      // Frist prompt flag to track displayShellPrompt very first time been called.
+  int promptPosition;        // Tracks where user input starts to prevent prompt
+                             // deletion.
+  bool isFirstPrompt = true; // Frist prompt flag to track displayShellPrompt
+                             // very first time been called.
 };
 
 #endif // QSHELLUI_H
