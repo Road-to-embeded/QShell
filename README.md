@@ -3,8 +3,8 @@ QShell is a cross-platform shell like terminal.
 
 ## New Features to Implement
 - [] Add man pages.
-- [] Add unknown commands error message.
-- [] Add unknown commands output.
+- [x] Add unknown commands error message.
+- [x] Add unknown commands output.
 - [] Add different colors for user + hostname, user input, shell ouput. 
 - [] Implement file and dir output distintions (maybe different colors for now).
 - [] Customize cursor as a block.

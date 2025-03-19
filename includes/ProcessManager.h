@@ -22,14 +22,27 @@ public:
   explicit ProcessManager(QObject *parent = nullptr);
   ~ProcessManager();
 
+  /*
+   * @brief Starts new child process
+   */
   void startProcess(QString command);
+
+  /*
+   * @brief Validates if user input command is valid
+   *
+   * @param command - User input command
+   *
+   * @return Bolean value representing the existance of the command.
+   */
+  bool commandIsValid(QString command);
 
 signals:
   void processOutputReady(QString output);
 
 private:
-  QProcess *process;  // Process instance to run commands
-  QString command;    // Stores user input command
+  QProcess *process;   // Process instance to run commands
+  QString command;     // Stores user input command
+  QString errorMessage; // Last error message
 };
 
 #endif // PROCESS_MANAGER_H
