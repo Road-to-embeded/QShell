@@ -9,6 +9,8 @@
 #include <QProcessEnvironment>
 #include <QTextDocumentFragment>
 #include <QTimer>
+#include <QScrollBar>
+
 /**
  * @brief Constructor: Initializes the QShell UI.
  */
@@ -172,12 +174,11 @@ void QShellUI::displayShellPrompt() {
 
   // apply default style
   QString styledPrompt =
-      QString(
-          "<span style='font: monospace; font-weight: bold;'>"
-          "<span style='font-weight: bold; color: "
-          "#9BDB0F;'>%1@%2</span>:"
-          "<span style='color: #11E3DF;'>%3</span>$ "
-          "</span>")
+      QString("<span style='font: monospace; font-weight: bold;'>"
+              "<span style='font-weight: bold; color: "
+              "#9BDB0F;'>%1@%2</span>:"
+              "<span style='color: #11E3DF;'>%3</span>$ "
+              "</span>")
           .arg(username, hostname, cwd);
 
   terminalArea->insertHtml(styledPrompt);     // Insert the new prompt
@@ -238,6 +239,14 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     if (cursor.position() < promptPosition) {
       return;
     }
+  }
+
+  // Handle clear screen
+  if (event->key() == Qt::Key_L && event->modifiers() & Qt::ControlModifier) {
+    // scroll up effect inserting new lines to clear screen
+    clearScreen();
+
+    return;
   }
 
   // Handle "Enter" key (User submits command)
@@ -362,33 +371,51 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   return QMainWindow::eventFilter(object, event);
 }
 
-
-
 void QShellUI::displayOutput(QString output) {
-    // Ignore empty output
-    if (output.trimmed().isEmpty()) {
-        return;
-    }
+  // Ignore empty output
+  if (output.trimmed().isEmpty()) {
+    return;
+  }
 
-    terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
+  terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
 
-    // Insert output as a new block
-    QTextCursor cursor = terminalArea->textCursor();
-    cursor.insertBlock(); // New line before output
+  // Insert output as a new block
+  QTextCursor cursor = terminalArea->textCursor();
+  cursor.insertBlock(); // New line before output
 
-    // Apply formatting using QTextCharFormat
-    QTextCharFormat format;
-    format.setForeground(QColor("#11E3DF")); // Cyan color for output
-    cursor.setCharFormat(format);
+  // Apply formatting using QTextCharFormat
+  QTextCharFormat format;
+  format.setForeground(QColor("#11E3DF")); // Cyan color for output
+  cursor.setCharFormat(format);
 
-    // Insert output
-    cursor.insertText(output.trimmed());
+  // Insert output
+  cursor.insertText(output.trimmed());
 
-    terminalArea->moveCursor(QTextCursor::End); // Move cursor to end
+  terminalArea->moveCursor(QTextCursor::End); // Move cursor to end
 
-    // Delay new prompt after last output
-    QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
+  // Delay new prompt after last output
+  QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
 }
 
+void QShellUI::clearScreen() {
+    terminalArea->clear();  // Clears everything
 
+    // Reset cursor position to absolute start
+    terminalArea->moveCursor(QTextCursor::Start);
+
+    // Reset first prompt flag to ensure it doesn't add a new line
+    isFirstPrompt = true;
+
+    // Reset scrollbar position to the top
+    QScrollBar *scrollBar = terminalArea->verticalScrollBar();
+    if (scrollBar) {
+        scrollBar->setValue(scrollBar->minimum());
+    }
+
+    // Force a full UI refresh to reflect changes
+    terminalArea->update();
+
+    // Add new prompt at the top
+    displayShellPrompt();
+}
 

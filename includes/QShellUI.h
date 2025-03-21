@@ -103,6 +103,11 @@ private:
    */
   void handleUserInput();
 
+  /*
+   * @brief Clear screen by pushing output upward
+   */
+  void clearScreen(); 
+
   QTextEdit *terminalArea; // Terminal display area (both input & output).
   QVBoxLayout *mainLayout; // Layout manager for UI elements.
   ProcessManager *processManager; // ShellUI create a ProcessManager
