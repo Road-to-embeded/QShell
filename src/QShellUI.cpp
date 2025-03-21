@@ -72,6 +72,8 @@ void QShellUI::setupUI() {
 
   // Create a QTextEdit for displaying prompts, input, and output
   terminalArea = new QTextEdit(this);
+
+  terminalArea->setCursorWidth(8);
   terminalArea->setReadOnly(false); // Allow typing
 
   mainLayout->addWidget(terminalArea);
