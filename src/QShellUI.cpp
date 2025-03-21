@@ -9,7 +9,6 @@
 #include <QProcessEnvironment>
 #include <QTextDocumentFragment>
 #include <QTimer>
-
 /**
  * @brief Constructor: Initializes the QShell UI.
  */
@@ -54,15 +53,10 @@ void QShellUI::loadStyleSheet() {
 
     // apply styles globally using qApp(pointer to )
     qApp->setStyleSheet(styleSheet);
-    qDebug() << "Loaded Stylesheet:\n" << styleSheet;
     stylesFile.close();
-    qDebug() << "Stylesheet loaded successfully!";
   } else {
     qDebug() << "Error loading QSS file.";
   }
-  qDebug() << "Terminal Current StyleSheet:\n" << terminalArea->styleSheet();
-  qDebug() << "Current App Stylesheet:\n" << qApp->styleSheet();
-
 }
 
 /**
@@ -79,7 +73,6 @@ void QShellUI::setupUI() {
   // Create a QTextEdit for displaying prompts, input, and output
   terminalArea = new QTextEdit(this);
   terminalArea->setReadOnly(false); // Allow typing
-  terminalArea->setProperty("class", "defaultTerminal");
 
   mainLayout->addWidget(terminalArea);
   setCentralWidget(centralWidget);
@@ -176,12 +169,14 @@ void QShellUI::displayShellPrompt() {
   terminalArea->setObjectName("defaultTerminal");
 
   // apply default style
-  QString styledPrompt = QString("<span id='prompt'>"
-                                 "<span id='promptPrefix'>%1@%2</span>:"
-                                 "<span id='promptCWD'>%3</span>$ "
-                                 "</span>")
-                             .arg(username, hostname, cwd);
-  qDebug() << "Final Styled Prompt HTML:\n" << styledPrompt;
+  QString styledPrompt =
+      QString(
+          "<span style='font: monospace; font-weight: bold;'>"
+          "<span style='font-weight: bold; color: "
+          "#9BDB0F;'>%1@%2</span>:"
+          "<span style='color: #11E3DF;'>%3</span>$ "
+          "</span>")
+          .arg(username, hostname, cwd);
 
   terminalArea->insertHtml(styledPrompt);     // Insert the new prompt
   terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
@@ -365,21 +360,33 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   return QMainWindow::eventFilter(object, event);
 }
 
+
+
 void QShellUI::displayOutput(QString output) {
-  // ignore empty output
-  if (output.trimmed().isEmpty()) {
-    return;
-  }
+    // Ignore empty output
+    if (output.trimmed().isEmpty()) {
+        return;
+    }
 
-  terminalArea->moveCursor(QTextCursor::End); // Ensure cursor is at the end
-  terminalArea->insertPlainText("\n" +
-                                output.trimmed()); // Append output correctly
+    terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
 
-  if (!output.endsWith("\n")) {
-    // add new line if missing from output
-    terminalArea->append("");
-  }
+    // Insert output as a new block
+    QTextCursor cursor = terminalArea->textCursor();
+    cursor.insertBlock(); // New line before output
 
-  // Delay new prompt appears ONLY after the last output
-  QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
+    // Apply formatting using QTextCharFormat
+    QTextCharFormat format;
+    format.setForeground(QColor("#11E3DF")); // Cyan color for output
+    cursor.setCharFormat(format);
+
+    // Insert output
+    cursor.insertText(output.trimmed());
+
+    terminalArea->moveCursor(QTextCursor::End); // Move cursor to end
+
+    // Delay new prompt after last output
+    QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
 }
+
+
+
