@@ -28,7 +28,7 @@ QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
 
   // Connect ProcessManager output signal to QShellUI display function
   connect(processManager, &ProcessManager::processOutputReady, this,
-          &QShellUI::displayOutput);
+          static_cast<void (QShellUI::*)(QString)>(&QShellUI::displayOutput));
 }
 
 /**
@@ -270,6 +270,9 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     QString userCommand =
         terminalText.mid(lastPromptIndex + prompt.length()).trimmed();
 
+    // Store last command
+    lastCommand = userCommand;
+
     // handle exit command
     if (userCommand == "exit") {
       // close shell
@@ -372,28 +375,42 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   return QMainWindow::eventFilter(object, event);
 }
 
+/*
+ * @brief Slot handler
+ */
 void QShellUI::displayOutput(QString output) {
-  // parse output
-  QString styledOutput = styleOutput(output);
+  displayOutput(output, lastCommand);
+}
 
+/*
+ * @brief Display output override to handle user input
+ *
+ * @params command output and command itself
+ * */
+void QShellUI::displayOutput(QString output, QString command) {
   // Ignore empty output
   if (output.trimmed().isEmpty()) {
     return;
   }
 
-  terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
-
-  // Insert output as a new block
-  QTextCursor cursor = terminalArea->textCursor();
-  cursor.insertBlock(); // New line before output
+  terminalArea->moveCursor(QTextCursor::End);      // Move cursor to the end
+  QTextCursor cursor = terminalArea->textCursor(); // Insert output as new block
+  cursor.insertBlock();                            // New line before output
 
   // Apply formatting using QTextCharFormat
   QTextCharFormat format;
   format.setForeground(QColor("#11E3DF")); // Cyan color for output
   cursor.setCharFormat(format);
 
-  // Insert output
-  cursor.insertHtml(styledOutput.trimmed());
+  // Handle 'ls' command formatting
+  if (command.trimmed().startsWith("ls")) {
+    // format and clorize directories
+    QString styledLSOutput = styleOutput(output);
+    cursor.insertHtml(styledLSOutput);
+  } else {
+    // Insert output
+    cursor.insertText(output.trimmed());
+  }
 
   terminalArea->moveCursor(QTextCursor::End); // Move cursor to end
 

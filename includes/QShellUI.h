@@ -51,6 +51,7 @@ private slots:
    *
    */
   void displayOutput(QString output);
+  void displayOutput(QString output, QString command);    // Used internally to handle ls command formatting
 
 protected:
   /**
@@ -120,6 +121,7 @@ private:
   QTextEdit *terminalArea; // Terminal display area (both input & output).
   QVBoxLayout *mainLayout; // Layout manager for UI elements.
   ProcessManager *processManager; // ShellUI create a ProcessManager
+  QString lastCommand;            // Needed for displayOutput override which takes 2 args to handle ls command output formatting.
   QString username;               // Stores the current system username.
   QString hostname;               // Stores the system hostname.
   QString homeDIR;                // Stores the home directory.
