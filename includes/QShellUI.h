@@ -108,6 +108,15 @@ private:
    */
   void clearScreen(); 
 
+  /*
+   * @brief Output parser to add destintion between directories and regular files
+   *
+   * @param The output received after child process handles user command
+   *
+   * @return The parsed and styled output
+   */
+  QString styleOutput(QString output);
+
   QTextEdit *terminalArea; // Terminal display area (both input & output).
   QVBoxLayout *mainLayout; // Layout manager for UI elements.
   ProcessManager *processManager; // ShellUI create a ProcessManager

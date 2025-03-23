@@ -4,12 +4,13 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QHostInfo>
 #include <QKeyEvent>
 #include <QProcessEnvironment>
+#include <QScrollBar>
 #include <QTextDocumentFragment>
 #include <QTimer>
-#include <QScrollBar>
 
 /**
  * @brief Constructor: Initializes the QShell UI.
@@ -372,6 +373,9 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
 }
 
 void QShellUI::displayOutput(QString output) {
+  // parse output
+  QString styledOutput = styleOutput(output);
+
   // Ignore empty output
   if (output.trimmed().isEmpty()) {
     return;
@@ -389,7 +393,7 @@ void QShellUI::displayOutput(QString output) {
   cursor.setCharFormat(format);
 
   // Insert output
-  cursor.insertText(output.trimmed());
+  cursor.insertHtml(styledOutput.trimmed());
 
   terminalArea->moveCursor(QTextCursor::End); // Move cursor to end
 
@@ -398,24 +402,53 @@ void QShellUI::displayOutput(QString output) {
 }
 
 void QShellUI::clearScreen() {
-    terminalArea->clear();  // Clears everything
+  terminalArea->clear(); // Clears everything
 
-    // Reset cursor position to absolute start
-    terminalArea->moveCursor(QTextCursor::Start);
+  // Reset cursor position to absolute start
+  terminalArea->moveCursor(QTextCursor::Start);
 
-    // Reset first prompt flag to ensure it doesn't add a new line
-    isFirstPrompt = true;
+  // Reset first prompt flag to ensure it doesn't add a new line
+  isFirstPrompt = true;
 
-    // Reset scrollbar position to the top
-    QScrollBar *scrollBar = terminalArea->verticalScrollBar();
-    if (scrollBar) {
-        scrollBar->setValue(scrollBar->minimum());
-    }
+  // Reset scrollbar position to the top
+  QScrollBar *scrollBar = terminalArea->verticalScrollBar();
+  if (scrollBar) {
+    scrollBar->setValue(scrollBar->minimum());
+  }
 
-    // Force a full UI refresh to reflect changes
-    terminalArea->update();
+  // Force a full UI refresh to reflect changes
+  terminalArea->update();
 
-    // Add new prompt at the top
-    displayShellPrompt();
+  // Add new prompt at the top
+  displayShellPrompt();
 }
 
+QString QShellUI::styleOutput(QString output) {
+  // get each output entry
+  QStringList entries = output.split("\n", Qt::SkipEmptyParts);
+  QStringList styledOutput;
+
+  // apply style to each entry
+  for (const QString entry : entries) {
+    // place holder
+    QString styledEntry;
+
+    // file type
+    QFileInfo fileType(entry.trimmed());
+
+    // apply style
+    if (fileType.isDir()) {
+      styledEntry = "<span style='color:steelblue'>" + entry + "</span>";
+    }
+
+    else {
+
+      styledEntry = entry;
+    }
+
+    // build styled output
+    styledOutput.append(styledEntry);
+  }
+
+  return styledOutput.join("<br>");
+}
