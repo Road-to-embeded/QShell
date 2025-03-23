@@ -25,5 +25,4 @@ QShell is a cross-platform shell like terminal.
 - [] Add translucent feel to shell.
 - [] Add setttings to change shell styles.
 
-## Known Bugs
 
