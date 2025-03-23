@@ -26,5 +26,4 @@ QShell is a cross-platform shell like terminal.
 - [] Add setttings to change shell styles.
 
 ## Known Bugs
-- [] Command (**clear**)sends ANSI code "\033[H\033[2J" as output instead of processing command.
 
