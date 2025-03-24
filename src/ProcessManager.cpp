@@ -36,7 +36,7 @@ void ProcessManager::startProcess(QString command) {
   if (!validCommand) {
     // error message
     errorMessage = "Error: Command '" + program + "' not found.\n";
-    
+
     // send error message as ouput
     emit processOutputReady(errorMessage);
 
@@ -57,4 +57,21 @@ void ProcessManager::startProcess(QString command) {
     // send output back to QShellUI
     emit processOutputReady(output);
   });
+}
+
+// Method falls back to QProcess if command not recognized.
+bool ProcessManager::handleFileSystemCommand(const QString &command,
+                                             const QStringList &args) {
+  // handle mdkir
+  if (command == "mkdir") {
+    // handle empty args
+    if (args.isEmpy()) {
+      emit processOutputReady(
+          "mkdir: missing operand<br>Try 'mkdir --help' for more information.");
+
+      return true;
+    }
+  }
+
+  return false; // not a filesystem command
 }
