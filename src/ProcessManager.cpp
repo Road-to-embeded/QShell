@@ -163,5 +163,20 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
     return true;
   }
 
+  // handle rm command
+  if (command == "rm") {
+    if (args.isEmpty()) {
+      emit processOutputReady("rm: missing operand\nTry 'rm --help' for more information.");
+      return true;
+    }
+
+    
+
+
+
+  }
+
+  
+
   return false; // not a filesystem command
 }
