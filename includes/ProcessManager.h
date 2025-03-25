@@ -48,19 +48,6 @@ class ProcessManager : public QObject {
  */
 bool handleFileSystemCommand(const QString &command, const QStringList &args);
 
-/**
- * @brief Handles internal file system commands like mkdir, touch, etc.
- * 
- * This function intercepts commands and performs the appropriate file system 
- * operations using Qt APIs instead of external processes.
- *
- * @param command The base command (e.g., "mkdir").
- * @param args The arguments passed to the command.
- * @return true if the command was handled internally; false otherwise.
- */
-bool handleFileSystemCommand(const QString &command, const QStringList &args);
-
-  bool handleFileSystemCommand(const QString &command, const QStringList &args);
 
 signals:
   void processOutputReady(QString output);

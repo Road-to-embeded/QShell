@@ -390,6 +390,8 @@ void QShellUI::displayOutput(QString output) {
 void QShellUI::displayOutput(QString output, QString command) {
   // Ignore empty output
   if (output.trimmed().isEmpty()) {
+    // force prompt
+    displayShellPrompt();
     return;
   }
 

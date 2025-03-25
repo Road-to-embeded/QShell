@@ -1,6 +1,7 @@
 #include "ProcessManager.h"
 #include <QDebug>
 #include <QStandardPaths>
+#include <QDir>
 
 // Constructor initializes a process
 ProcessManager::ProcessManager(QObject *parent) : QObject(parent) {
@@ -31,6 +32,13 @@ void ProcessManager::startProcess(QString command) {
   // get command
   QString program = args.takeFirst();
 
+  // handle filesystem commands internally
+  const bool handledInternally = handleFileSystemCommand(program, args);
+  
+  if (handledInternally) {
+    return; // do not fallback to QProcess if handled internally
+  }
+
   // validate command
   bool validCommand = commandIsValid(program);
   if (!validCommand) {
@@ -49,6 +57,7 @@ void ProcessManager::startProcess(QString command) {
   // Run command inside QProcess
   process->start(program, args);
 
+
   // Capture process output and send it to QShellUI
   connect(process, &QProcess::readyReadStandardOutput, this, [this]() {
     // get output from running command
@@ -62,15 +71,31 @@ void ProcessManager::startProcess(QString command) {
 // Method falls back to QProcess if command not recognized.
 bool ProcessManager::handleFileSystemCommand(const QString &command,
                                              const QStringList &args) {
+
   // handle mdkir
   if (command == "mkdir") {
     // handle empty args
-    if (args.isEmpy()) {
+    if (args.isEmpty()) {
       emit processOutputReady(
-          "mkdir: missing operand<br>Try 'mkdir --help' for more information.");
+          "mkdir: missing operand\nTry 'mkdir --help' for more information.");
 
       return true;
     }
+
+    // create new directory
+    for (const QString &dirName : args) {
+      bool success = QDir().mkdir(dirName);
+
+      // emit error on no creation
+      if (!success) {
+        // error message
+        QString errorMessage = QString("mkdir: cannot create directory '%1'").arg(dirName);
+        emit processOutputReady(errorMessage); // send error message to QShellUI.
+      }
+    }
+
+    // emit newline as output to trigger prompt
+    emit processOutputReady("\n");
   }
 
   return false; // not a filesystem command
