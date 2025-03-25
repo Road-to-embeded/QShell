@@ -132,5 +132,36 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
     return true;
   }
 
+  // handle remove directory
+  if (command == "rmdir") {
+    if (args.isEmpty()) {
+      emit processOutputReady("rmdir: missing operant\nTry rmdir --help for more information.");
+      return true;
+    }
+
+    // remove directory if exists and is empty
+    for (const QString &dirName : args) {
+      // current working directory placeholder
+      QDir cwd;
+
+      // send error if directory name does not exists
+      if (!cwd.exists(dirName)) {
+        // error message
+        QString errorMessage = QString("rmdir: failed to remove '%1': No such file or directory").arg(dirName);
+        emit processOutputReady(errorMessage);
+        continue;
+      }
+
+      // send error if unable to remove
+      if (!cwd.rmdir(dirName)) {
+        QString errorMessage = QString("rmdir: failed to remove '%1': Directory not empty or permission denied").arg(dirName);
+        emit processOutputReady(errorMessage);
+      }
+    }
+
+    emit processOutputReady("\n");
+    return true;
+  }
+
   return false; // not a filesystem command
 }
