@@ -49,6 +49,51 @@ class ProcessManager : public QObject {
 bool handleFileSystemCommand(const QString &command, const QStringList &args);
 
 
+/**
+ * @brief Handles the 'mkdir' command to create one or more directories.
+ * 
+ * @param args List of directory names to create.
+ * @return true if the command was handled internally, false otherwise.
+ */
+bool handleMkdir(const QStringList &args);
+
+/**
+ * @brief Handles the 'touch' command to create empty files or update timestamps.
+ * 
+ * @param args List of filenames to create.
+ * @return true if the command was handled internally, false otherwise.
+ */
+bool handleTouch(const QStringList &args);
+
+/**
+ * @brief Handles the 'rmdir' command to remove one or more empty directories.
+ * 
+ * @param args List of directory names to remove.
+ * @return true if the command was handled internally, false otherwise.
+ */
+bool handleRmdir(const QStringList &args);
+
+/**
+ * @brief Handles the 'rm' command to delete files or directories.
+ * 
+ * Supports the -r, -f, and -rf flags for recursive and forceful deletion.
+ * 
+ * @param args List of files/directories and optional flags.
+ * @return true if the command was handled internally, false otherwise.
+ */
+bool handleRm(const QStringList &args);
+
+/**
+ * @brief Handles the 'mv' command to rename or move files and directories.
+ * 
+ * Moves files into directories or renames files/folders depending on arguments.
+ * 
+ * @param args List of source and destination paths.
+ * @return true if the command was handled internally, false otherwise.
+ */
+bool handleMv(const QStringList &args);
+
+
 signals:
   void processOutputReady(QString output);
 
