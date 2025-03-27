@@ -252,5 +252,15 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
     return true;
   }
 
+  // Handle rm command execution
+  if (command == "mv") {
+    // handle missing operand
+    if (args.isEmpty()) {
+      // send error message
+      emit processOutputReady("mv: missing file operand\nTry 'mv --help' for more information.");
+      return true;
+    }
+  }
+
   return false; // not a filesystem command
 }
