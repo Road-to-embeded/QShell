@@ -262,8 +262,10 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
       return true;
     }
 
-    // handle missing destination file operand
+    // handle rename and move
     for (const QString &arg : args) {
+
+    // handle missing destination file operand
       if (args.size() < 2) {
         QString lastArg = args.isEmpty() ? "" : args.first();
         QString errorMessage =
@@ -273,7 +275,23 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
         emit processOutputReady(errorMessage);
         return true;
       }
+
+      // handle rename
+      QString source = args[0];
+      QString destination = args[1];
+      QFileInfo sourceInfo(source);
+
+      // check existance of destination
+      if (!sourceInfo.exists()) {
+        // send error message
+        QString errorMessage = QString("mv: cannot stat '%1' : No such file or directory").arg(source);
+        emit processOutputReady(errorMessage);
+      }
+
+      return true;
     }
+
+    // 
 
     // trigger prompt
     emit processOutputReady("\n");
