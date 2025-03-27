@@ -257,9 +257,27 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
     // handle missing operand
     if (args.isEmpty()) {
       // send error message
-      emit processOutputReady("mv: missing file operand\nTry 'mv --help' for more information.");
+      emit processOutputReady(
+          "mv: missing file operand\nTry 'mv --help' for more information.");
       return true;
     }
+
+    // handle missing destination file operand
+    for (const QString &arg : args) {
+      if (args.size() < 2) {
+        QString lastArg = args.isEmpty() ? "" : args.first();
+        QString errorMessage =
+            QString("mv: missing destination file operand after '%1'\nTry 'mv "
+                    "--help' for more information.")
+                .arg(lastArg);
+        emit processOutputReady(errorMessage);
+        return true;
+      }
+    }
+
+    // trigger prompt
+    emit processOutputReady("\n");
+    return true;
   }
 
   return false; // not a filesystem command
