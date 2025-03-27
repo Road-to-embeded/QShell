@@ -135,7 +135,8 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
   // handle remove directory
   if (command == "rmdir") {
     if (args.isEmpty()) {
-      emit processOutputReady("rmdir: missing operant\nTry rmdir --help for more information.");
+      emit processOutputReady(
+          "rmdir: missing operant\nTry rmdir --help for more information.");
       return true;
     }
 
@@ -147,14 +148,19 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
       // send error if directory name does not exists
       if (!cwd.exists(dirName)) {
         // error message
-        QString errorMessage = QString("rmdir: failed to remove '%1': No such file or directory").arg(dirName);
+        QString errorMessage =
+            QString("rmdir: failed to remove '%1': No such file or directory")
+                .arg(dirName);
         emit processOutputReady(errorMessage);
         continue;
       }
 
       // send error if unable to remove
       if (!cwd.rmdir(dirName)) {
-        QString errorMessage = QString("rmdir: failed to remove '%1': Directory not empty or permission denied").arg(dirName);
+        QString errorMessage =
+            QString("rmdir: failed to remove '%1': Directory not empty or "
+                    "permission denied")
+                .arg(dirName);
         emit processOutputReady(errorMessage);
       }
     }
@@ -165,18 +171,50 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
 
   // handle rm command
   if (command == "rm") {
+    // handle empty args
     if (args.isEmpty()) {
-      emit processOutputReady("rm: missing operand\nTry 'rm --help' for more information.");
+      emit processOutputReady(
+          "rm: missing operand\nTry 'rm --help' for more information.");
       return true;
     }
 
-    
+    // handle file or dir does not exist
+    for (const QString &target : args) {
+      // retrieve info about target
+      QFileInfo targetInfo(target);
 
+      // handle if target info does not exists
+      if (!targetInfo.exists()) {
+        // send error message
+        QString errorMessage =
+            QString("rm: cannot remove '%1': no such file or directory")
+                .arg(target);
+        emit processOutputReady(errorMessage);
+        continue;
+      }
 
+      // handle if target info is a directory
+      if (targetInfo.isDir()) {
+        // send error message
+        QString errorMessage =
+            QString("rm: cannot remove '%1/': Is a directory").arg(target);
+        emit processOutputReady(errorMessage);
+        continue;
+      }
 
+      // handle file removal and failure
+      if (!QFile::remove(target)) {
+        // send error message on removal failure
+        QString errorMessage =
+            QString("rm: failed to remove '%1'").arg(target);
+        emit processOutputReady(errorMessage);
+      }
+    }
+
+    // trigger prompt
+    emit processOutputReady("\n");
+    return true;
   }
-
-  
 
   return false; // not a filesystem command
 }
