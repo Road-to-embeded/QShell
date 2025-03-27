@@ -262,37 +262,50 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
       return true;
     }
 
+    // handle missing destination file operand
+    if (args.size() < 2) {
+      QString lastArg = args.isEmpty() ? "" : args.first();
+      QString errorMessage =
+          QString("mv: missing destination file operand after '%1'\nTry 'mv "
+                  "--help' for more information.")
+              .arg(lastArg);
+      emit processOutputReady(errorMessage);
+      return true;
+    }
 
-      // handle missing destination file operand
-      if (args.size() < 2) {
-        QString lastArg = args.isEmpty() ? "" : args.first();
+    // placeholders
+    QString source = args[0];
+    QString destination = args[1];
+    QFileInfo sourceInfo(source);
+    QFileInfo destinationInfo(destination);
+
+    qDebug() << "Source:" << source << "Dest:" << destination;
+
+    // check source existance
+    if (!sourceInfo.exists()) {
+      // send error message
+      QString errorMessage =
+          QString("mv: cannot stat '%1' : No such file or directory")
+              .arg(source);
+      emit processOutputReady(errorMessage);
+      return true;
+    }
+
+    // handle move to different destination
+    if (destinationInfo.exists() && destinationInfo.isDir()) {
+      // build new path destination
+      QString finalDest = QDir(destination).filePath(sourceInfo.fileName());
+
+      // attempt moving source to destination - handle move failure
+      if (!QFile::rename(source, finalDest)) {
         QString errorMessage =
-            QString("mv: missing destination file operand after '%1'\nTry 'mv "
-                    "--help' for more information.")
-                .arg(lastArg);
+            QString("mv: failed to move '%1' to '%2'").arg(source, destination);
         emit processOutputReady(errorMessage);
         return true;
       }
 
-      // handle rename
-      QString source = args[0];
-      QString destination = args[1];
-      QFileInfo sourceInfo(source);
-
-      qDebug() << "Source:" << source << "Dest:" << destination;
-
-
-      // check existance of destination
-      if (!sourceInfo.exists()) {
-        // send error message
-        QString errorMessage =
-            QString("mv: cannot stat '%1' : No such file or directory")
-                .arg(source);
-        emit processOutputReady(errorMessage);
-        return true;
-      }
-
-      // handle renaming failure
+    } else {
+      // attempt rename source - handle renaming failure
       if (!QFile::rename(source, destination)) {
         // send error message
         QString errorMessage =
@@ -300,6 +313,7 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
         emit processOutputReady(errorMessage);
         return true;
       }
+    }
 
     // trigger prompt
     emit processOutputReady("\n");
