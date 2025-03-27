@@ -178,8 +178,29 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
       return true;
     }
 
+    // check for recursive flag in command args
+    bool recursive = false;
+    QStringList paths;
+
+    for (const QString &arg : args) {
+      if (arg == "-r" || arg == "-rf" || arg == "-f" || arg == "-fr") {
+        // set recursive flag
+        recursive = true;
+        continue;
+      }
+
+      // build new path without previous flags (-r, -rf, -fr, -f)
+      paths.append(arg);
+    }
+
+    // handle missing operands
+    if (paths.isEmpty()) {
+      emit processOutputReady("rm: missing file operand");
+      return true;
+    }
+
     // handle file or dir does not exist
-    for (const QString &target : args) {
+    for (const QString &target : paths) {
       // retrieve info about target
       QFileInfo targetInfo(target);
 
@@ -193,21 +214,36 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
         continue;
       }
 
-      // handle if target info is a directory
+      // handle directories
       if (targetInfo.isDir()) {
-        // send error message
-        QString errorMessage =
-            QString("rm: cannot remove '%1/': Is a directory").arg(target);
-        emit processOutputReady(errorMessage);
-        continue;
+        // recursive flag check
+        if (!recursive) {
+          // send error message
+          QString errorMessage =
+              QString("rm: cannot remove '%1/': Is a directory").arg(target);
+          emit processOutputReady(errorMessage);
+          continue;
+        }
+
+        // remove recursively if possible
+        QDir directory(target);
+        if (!directory.removeRecursively()) {
+          // send error message if not possible
+          QString errorMessage =
+              QString("rm: failed to remove directory '%1'/").arg(target);
+          emit processOutputReady(errorMessage);
+        }
+
       }
 
-      // handle file removal and failure
-      if (!QFile::remove(target)) {
-        // send error message on removal failure
-        QString errorMessage =
-            QString("rm: failed to remove '%1'").arg(target);
-        emit processOutputReady(errorMessage);
+      else {
+        // handle file removal and failure
+        if (!QFile::remove(target)) {
+          // send error message on file removal failure
+          QString errorMessage =
+              QString("rm: failed to remove '%1'").arg(target);
+          emit processOutputReady(errorMessage);
+        }
       }
     }
 
