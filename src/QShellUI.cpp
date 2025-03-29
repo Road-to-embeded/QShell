@@ -159,8 +159,8 @@ void QShellUI::displayShellPrompt() {
   QStringList lines = terminalArea->toPlainText().split("\n");
   QString lastLine = lines.isEmpty() ? "" : lines.last().trimmed();
 
-  // If the last line is already a prompt, do NOT add another one
-  if (lastLine == prompt.trimmed()) {
+  // prevents double prompts from stacking up when the user presses Enter multiple times
+  if ((lastLine == prompt.trimmed()) && !isFirstPrompt) {
     return;
   }
 
@@ -272,6 +272,14 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
 
     // Store last command
     lastCommand = userCommand;
+
+
+    // trigger prompt on empty command
+    if (userCommand.isEmpty()) {
+      displayOutput("", "");
+      qDebug() << "We are pressing enter on empty command!";
+      return;
+    }
 
     // handle exit command
     if (userCommand == "exit") {
@@ -388,9 +396,23 @@ void QShellUI::displayOutput(QString output) {
  * @params command output and command itself
  * */
 void QShellUI::displayOutput(QString output, QString command) {
-  // Ignore empty output
+  // If user just pressed Enter (empty command), just show a new prompt
+if (command.trimmed().isEmpty()) {
+    qDebug() << "Enter pressed with no command!";
+    
+    QTextCursor cursor = terminalArea->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertBlock(); // inserts a new line
+
+    terminalArea->setTextCursor(cursor);
+    
+    isFirstPrompt = true; // allow new line without double spacing
+    displayShellPrompt();
+    return;
+}
+    // Ignore empty output
   if (output.trimmed().isEmpty()) {
-    // force prompt
+
     displayShellPrompt();
     return;
   }
@@ -405,7 +427,7 @@ void QShellUI::displayOutput(QString output, QString command) {
   cursor.setCharFormat(format);
 
   // Handle 'ls' command formatting
-  if (command.trimmed().startsWith("ls")) {
+  if (command.trimmed().startsWith("ls")) { 
     // format and clorize directories
     QString styledLSOutput = styleOutput(output);
     cursor.insertHtml(styledLSOutput);
