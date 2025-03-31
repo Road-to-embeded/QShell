@@ -66,6 +66,22 @@ void ProcessManager::startProcess(QString command) {
     // send output back to QShellUI
     emit processOutputReady(output);
   });
+
+  // Capture error
+  connect(process, &QProcess::readyReadStandardError, this, [this]() {
+    QString error = process->readAllStandardError();
+    emit processOutputReady(error);
+  });
+
+  // needed to show prompt even with no content
+  connect(
+      process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+      this, [this](int /*exitCode*/, QProcess::ExitStatus /*status*/) {
+        if (process->readAllStandardOutput().trimmed().isEmpty() &&
+            process->readAllStandardError().trimmed().isEmpty()) {
+          emit processOutputReady(""); // Trigger prompt manually if no output
+        }
+      });
 }
 
 // Method calls for filesystem specific command handlers

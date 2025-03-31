@@ -277,7 +277,6 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     // trigger prompt on empty command
     if (userCommand.isEmpty()) {
       displayOutput("", "");
-      qDebug() << "We are pressing enter on empty command!";
       return;
     }
 
@@ -397,9 +396,8 @@ void QShellUI::displayOutput(QString output) {
  * */
 void QShellUI::displayOutput(QString output, QString command) {
   // If user just pressed Enter (empty command), just show a new prompt
-if (command.trimmed().isEmpty()) {
-    qDebug() << "Enter pressed with no command!";
-    
+  if (command.trimmed().isEmpty()) { 
+    // position cursor
     QTextCursor cursor = terminalArea->textCursor();
     cursor.movePosition(QTextCursor::End);
     cursor.insertBlock(); // inserts a new line
@@ -426,6 +424,10 @@ if (command.trimmed().isEmpty()) {
   format.setForeground(QColor("#11E3DF")); // Cyan color for output
   cursor.setCharFormat(format);
 
+  // validate for 0 args
+  // validate for no dir/unknown
+  // ls on empty should call prompt 
+  
   // Handle 'ls' command formatting
   if (command.trimmed().startsWith("ls")) { 
     // format and clorize directories
