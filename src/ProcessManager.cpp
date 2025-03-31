@@ -70,7 +70,7 @@ void ProcessManager::startProcess(QString command) {
   // Capture error
   connect(process, &QProcess::readyReadStandardError, this, [this]() {
     QString error = process->readAllStandardError();
-    emit processOutputReady(error);
+    emit processErrorReady(error);
   });
 
   // needed to show prompt even with no content

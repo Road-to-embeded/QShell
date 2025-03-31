@@ -96,6 +96,7 @@ bool handleMv(const QStringList &args);
 
 signals:
   void processOutputReady(QString output);
+  void processErrorReady(QString error);
 
 private:
   QProcess *process;    // Process instance to run commands

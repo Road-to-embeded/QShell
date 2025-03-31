@@ -29,6 +29,9 @@ QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
   // Connect ProcessManager output signal to QShellUI display function
   connect(processManager, &ProcessManager::processOutputReady, this,
           static_cast<void (QShellUI::*)(QString)>(&QShellUI::displayOutput));
+
+  // Connect ProcessManager output error 
+  connect(processManager, &ProcessManager::processErrorReady, this, &QShellUI::displayError);
 }
 
 /**
@@ -466,6 +469,7 @@ void QShellUI::clearScreen() {
   displayShellPrompt();
 }
 
+// Style output for ls commmand
 QString QShellUI::styleOutput(QString output) {
   // get each output entry
   QStringList entries = output.split("\n", Qt::SkipEmptyParts);
@@ -495,3 +499,23 @@ QString QShellUI::styleOutput(QString output) {
 
   return styledOutput.join("<br>");
 }
+
+// display error implementation
+void QShellUI::displayError(QString error) {
+    terminalArea->moveCursor(QTextCursor::End);
+    QTextCursor cursor = terminalArea->textCursor();
+
+    // Only insert block if last character isn't already a newline
+    QString lastChar = terminalArea->toPlainText().right(1);
+    if (lastChar != "\n") {
+        cursor.insertBlock();  // Only insert block when needed
+    }
+
+    QTextCharFormat errorFormat;
+    errorFormat.setForeground(QColor("#FF5555")); // Light red
+    cursor.setCharFormat(errorFormat);
+    cursor.insertText(error.trimmed());
+
+    QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
+}
+

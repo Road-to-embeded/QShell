@@ -53,6 +53,14 @@ private slots:
   void displayOutput(QString output);
   void displayOutput(QString output, QString command);    // Used internally to handle ls command formatting
 
+  /*
+   * @brief Recieves output error from ProcessManager*
+   *
+   * @param error The output error
+   */
+   void displayError(QString error);
+
+
 protected:
   /**
    * @brief Handles keyboard input to:
