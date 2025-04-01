@@ -4,7 +4,6 @@ QShell is a lightweight Linux terminal emulator built using [Qt 6](https://www.q
 ![Qt6](https://img.shields.io/badge/Qt-6.8.0-brightgreen)
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue)
 ![Build](https://img.shields.io/badge/build-passing-success)
-![License](https://img.shields.io/github/license/Road-to-embedded/QShell)
 
 ---
 
