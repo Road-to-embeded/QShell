@@ -12,9 +12,7 @@
 #include <QTextDocumentFragment>
 #include <QTimer>
 
-/**
- * @brief Constructor: Initializes the QShell UI.
- */
+// Initialize QShell UI.
 QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
   setupUI();        // Setup shell UI
   loadStyleSheet(); // load default styles
@@ -34,14 +32,10 @@ QShellUI::QShellUI(QWidget *parent) : QMainWindow(parent) {
   connect(processManager, &ProcessManager::processErrorReady, this, &QShellUI::displayError);
 }
 
-/**
- * @brief Destructor: Cleans up resources.
- */
+// Cleans up resources.
 QShellUI::~QShellUI() {}
 
-/*
- * @brief Load stylesheet
- */
+// Load stylesheet
 void QShellUI::loadStyleSheet() {
   // find executable path
   QString qAppDIR = QCoreApplication::applicationDirPath();
@@ -65,9 +59,7 @@ void QShellUI::loadStyleSheet() {
   }
 }
 
-/**
- * @brief Sets up the terminal UI using a single QTextEdit.
- */
+// Sets up the terminal UI using a single QTextEdit.
 void QShellUI::setupUI() {
   setWindowTitle("QShell");
   resize(800, 600);
@@ -100,48 +92,35 @@ void QShellUI::setupUI() {
   displayShellPrompt();
 }
 
-/**
- * @brief Retrieves the system username.
- */
+// Retrieves the system username.
 void QShellUI::setUsername() {
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   username = env.value("USER", env.value("USERNAME", "Unknown User"));
 }
 
-/**
- * @brief Retrieves the system hostname.
- */
+// Retrieves the system hostname.
 void QShellUI::setHostname() { hostname = QHostInfo::localHostName(); }
 
-/**
- * @brief Retrieves the user's home directory.
- */
+// Retrieves the user's home directory.
 void QShellUI::setHomeDIR() {
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   homeDIR = env.value("HOME");
 }
 
-/**
- * @brief Sets the current working directory to the home directory.
- */
+// Sets the current working directory to the home directory.
 void QShellUI::setCWD() {
   QDir::setCurrent(homeDIR);
   cwd = "~"; // Display as ~ instead of full path
 }
 
-/**
- * @brief Creates the shell prompt string in format: `username@hostname:cwd$ `
- * @return The formatted prompt string.
- */
+// Creates the shell prompt string in format: `username@hostname:cwd$ `
 QString QShellUI::createPrompt() {
   QString rawPrompt = QString("%1@%2:%3$").arg(username, hostname, cwd);
   // Convert to plain text before storing
   return QTextDocumentFragment::fromHtml(rawPrompt).toPlainText();
 }
 
-/**
- * @brief Displays a new prompt at the bottom of the terminal.
- */
+// Displays a new prompt at the bottom of the terminal.
 void QShellUI::displayShellPrompt() {
   terminalArea->moveCursor(QTextCursor::End); // Move cursor to the end
 
@@ -195,10 +174,7 @@ void QShellUI::displayShellPrompt() {
   isFirstPrompt = false;
 }
 
-/**
- * @brief Captures user input and prevents backspacing beyond the prompt.
- * @param event The key event triggered by user input.
- */
+// Captures user input and prevents backspacing beyond the prompt.
 void QShellUI::keyPressEvent(QKeyEvent *event) {
   // get the cursor
   QTextCursor cursor = terminalArea->textCursor();
@@ -258,7 +234,7 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
-  // Handle "Enter" key (User submits command)
+  // Handle 'Enter' key (User submits command)
   if (event->key() == Qt::Key_Return) {
     // Ensure no text is selected
     cursor.clearSelection();
@@ -362,17 +338,10 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
 }
 
 /**
- * @brief Filters key press events for the terminal area.
+ * This method intercepts key press events targeted at the terminal area (`QTextEdit`). 
+ * If a key press event occurs in the terminal, it manually calls `keyPressEvent()` to handle user input. 
  *
- * This method intercepts key press events targeted at the terminal area
- * (`QTextEdit`). If a key press event occurs in the terminal, it manually calls
- * `keyPressEvent()` to handle user input. This ensures that the terminal
- * behaves as expected.
- *
- * @param object The QObject that received the event.
- * @param event The event being processed.
- * @return `true` if the event was handled, preventing further propagation;
- *         otherwise, forwards it to the default event handler.
+ * This ensures that the terminal behaves as expected.
  */
 bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   if (object == terminalArea && event->type() == QEvent::KeyPress) {
@@ -390,18 +359,12 @@ bool QShellUI::eventFilter(QObject *object, QEvent *event) {
   return QMainWindow::eventFilter(object, event);
 }
 
-/*
- * @brief Slot handler
- */
+ // Slot handler
 void QShellUI::displayOutput(QString output) {
   displayOutput(output, lastCommand);
 }
 
-/*
- * @brief Display output override to handle user input
- *
- * @params command output and command itself
- * */
+//Display output override to handle user input
 void QShellUI::displayOutput(QString output, QString command) {
   // If user just pressed Enter (empty command), just show a new prompt
   if (command.trimmed().isEmpty()) { 
@@ -431,11 +394,7 @@ void QShellUI::displayOutput(QString output, QString command) {
   QTextCharFormat format;
   format.setForeground(QColor("#11E3DF")); // Cyan color for output
   cursor.setCharFormat(format);
-
-  // validate for 0 args
-  // validate for no dir/unknown
-  // ls on empty should call prompt 
-  
+ 
   // Handle 'ls' command formatting
   if (command.trimmed().startsWith("ls")) { 
     // format and clorize directories
@@ -452,6 +411,7 @@ void QShellUI::displayOutput(QString output, QString command) {
   QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
 }
 
+// clear screen implementation
 void QShellUI::clearScreen() {
   terminalArea->clear(); // Clears everything
 
@@ -523,4 +483,3 @@ void QShellUI::displayError(QString error) {
 
     QTimer::singleShot(15, this, &QShellUI::displayShellPrompt);
 }
-
