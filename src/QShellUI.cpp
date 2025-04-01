@@ -210,6 +210,11 @@ void QShellUI::keyPressEvent(QKeyEvent *event) {
     }
   }
 
+  // Ignore ESC key
+  if (event->key() == Qt::Key_Escape) {
+    return;
+  }
+
   // Prevent moving cursor before the prompt (Up Arrow)
   if (event->key() == Qt::Key_Up) {
     return; // Ignore up arrow to keep cursor within the current command line
