@@ -102,6 +102,10 @@ bool ProcessManager::handleFileSystemCommand(const QString &command,
   if (command == "mv")
     return handleMv(args);
 
+  if (command == "cat") {
+    return handleCat(args);
+  }
+
   return false; // not a filesystem command
 }
 
@@ -349,5 +353,42 @@ bool ProcessManager::handleMv(const QStringList &args) {
 
   // trigger prompt
   emit processOutputReady("\n");
+  return true;
+}
+
+// handle cat command implementation
+bool ProcessManager::handleCat(const QStringList &args) {
+  // check empty args
+  if (args.isEmpty()) {
+    emit processOutputReady(
+        "cat: missing file operand\nTry 'cat --help' for more information.");
+    return true;
+  }
+
+  // validate file existance
+  for (const QString &fileName : args) {
+    QFile file(fileName);
+
+    if (!file.exists()) {
+      QString errorMessage =
+          QString("cat: %1: No such file or directory").arg(fileName);
+      emit processOutputReady(errorMessage);
+      continue;
+    }
+
+    // attempt to open file, send error message on failure
+    if (!file.open(QIODevice::ReadOnly)) {
+      QString errorMessage =
+          QString("cat: %1: Permission denied").arg(fileName);
+      continue;
+    }
+
+    // read file content
+    QString content = file.readAll();
+    file.close();
+
+    emit processOutputReady(content);
+  }
+
   return true;
 }

@@ -93,6 +93,16 @@ bool handleRm(const QStringList &args);
  */
 bool handleMv(const QStringList &args);
 
+/*
+ * @brief Handles 'cat' command to display file content to the terminal.
+ *
+ * Prints full file content to standard output(READONLY) without editor.
+ *
+ * @param args List of filenames to concatenate.
+ *
+ * @return true if the command was handled internally, false otherwise.
+ */
+bool handleCat(const QStringList &args);
 
 signals:
   void processOutputReady(QString output);
