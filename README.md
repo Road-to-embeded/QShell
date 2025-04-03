@@ -9,7 +9,7 @@ QShell is a lightweight Linux terminal emulator built using [Qt 6](https://www.q
 
 ## Summary
 QShell is a Qt-powered GUI terminal that emulates classic Linux shell behavior.  
-It supports basic filesystem commands, colored output, and prompt history – all with a clean, stylized interface.
+It supports basic filesystem commands, colored output, and prompt history.
 
 ---
 
